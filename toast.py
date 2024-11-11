@@ -8,6 +8,8 @@ from .os_utils import OSUtils
 from .icon_utils import IconUtils
 from .drop_shadow import DropShadow
 from .constants import *
+from toast_close_menu import CloseMiniMenu
+
 
 
 class Toast(QDialog):
@@ -28,7 +30,7 @@ class Toast(QDialog):
 
     # Close event
     closed = Signal()
-    notification_id = Signal(int)
+    notification_status_id = Signal(int, str)
     
 
     def __init__(self, parent: QWidget = None, notification_id = None):
@@ -74,7 +76,10 @@ class Toast(QDialog):
         self.__text_section_margins = QMargins(0, 0, 15, 0)
         self.__close_button_margins = QMargins(0, -8, 0, -8)
         self.__text_section_spacing = 8
+
+        '''Modified version by:Mateus Mengatto'''
         self.__notification_id = notification_id
+        self.__notification_status = "novo"
 
         self.__elapsed_time = 0
         self.__fading_out = False
@@ -277,12 +282,18 @@ class Toast(QDialog):
 
     def hide(self):
         """Start hiding process of the toast notification"""
+        minimenu = CloseMiniMenu()
+        minimenu.variable_signal.connect(self.set_variable)
 
         if not self.__fading_out:
             self.__fading_out = True
             if self.__duration != 0:
                 self.__duration_timer.stop()
             self.__fade_out()
+
+    def emit_variable(self, var):
+        self.__notification_status = var
+        
 
     def __fade_out(self):
         """Start the fade out animation"""
@@ -306,7 +317,7 @@ class Toast(QDialog):
 
             # Emit signal
             self.closed.emit()
-            self.notification_id.emit(self.__notification_id)
+            self.notification_id.emit(self.__notification_id, self.__notificatio_status)
 
             # Update every other currently shown notification
             for toast in Toast.__currently_shown:
