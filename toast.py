@@ -2,14 +2,12 @@ import math
 from qtpy.QtGui import QGuiApplication, QScreen
 from qtpy.QtCore import Qt, QPropertyAnimation, QPoint, QTimer, QSize, QMargins, QRect, Signal
 from qtpy.QtGui import QPixmap, QIcon, QFont, QFontMetrics
-from qtpy.QtWidgets import QDialog, QPushButton, QLabel, QGraphicsOpacityEffect, QWidget
+from qtpy.QtWidgets import QDialog, QPushButton, QLabel, QGraphicsOpacityEffect, QWidget, QVBoxLayout
 from .toast_enums import ToastPreset, ToastIcon, ToastPosition, ToastButtonAlignment
 from .os_utils import OSUtils
 from .icon_utils import IconUtils
 from .drop_shadow import DropShadow
 from .constants import *
-from toast_close_menu import CloseMiniMenu
-
 
 
 class Toast(QDialog):
@@ -282,17 +280,20 @@ class Toast(QDialog):
 
     def hide(self):
         """Start hiding process of the toast notification"""
-        minimenu = CloseMiniMenu()
-        minimenu.variable_signal.connect(self.set_variable)
+        self.minimenu = CloseMiniMenu()
+        self.minimenu.variable_signal.connect(self.finish_hiding_notification)
+        button_pos = self.__close_button.mapToGlobal(QPoint(0, 0))
+        self.minimenu.show_menu(button_pos)
+
+
+    def finish_hiding_notification(self, var):
+        self.__notification_status = var
 
         if not self.__fading_out:
             self.__fading_out = True
             if self.__duration != 0:
                 self.__duration_timer.stop()
             self.__fade_out()
-
-    def emit_variable(self, var):
-        self.__notification_status = var
         
 
     def __fade_out(self):
@@ -317,7 +318,7 @@ class Toast(QDialog):
 
             # Emit signal
             self.closed.emit()
-            self.notification_id.emit(self.__notification_id, self.__notificatio_status)
+            self.notification_status_id.emit(self.__notification_id, self.__notification_status)
 
             # Update every other currently shown notification
             for toast in Toast.__currently_shown:
@@ -2300,3 +2301,44 @@ class Toast(QDialog):
 
         Toast.__currently_shown.clear()
         Toast.__queue.clear()
+
+
+
+class CloseMiniMenu(QWidget):
+    # Define signals for each button action
+    variable_signal = Signal(str)
+
+    def __init__(self):
+        super().__init__()
+        self.setWindowFlags(Qt.Popup | Qt.FramelessWindowHint)
+        self.setWindowModality(Qt.NonModal)
+
+        # Create buttons for each action
+        self.close_button = QPushButton("Relembrar")
+        self.remind_me_button = QPushButton("Abrir")
+        self.keep_on_button = QPushButton("Concluir")
+        #'novo', 'aberto', 'espera', 'concluido'
+        # Connect each button to its respective signal
+        self.close_button.clicked.connect(lambda: self.emit_variable("novo"))
+        self.remind_me_button.clicked.connect(lambda: self.emit_variable("aberto"))
+        self.keep_on_button.clicked.connect(lambda: self.emit_variable("concluido"))
+
+        # Layout to arrange buttons vertically
+        layout = QVBoxLayout()
+        layout.addWidget(self.close_button)
+        layout.addWidget(self.remind_me_button)
+        layout.addWidget(self.keep_on_button)
+        self.setLayout(layout)
+
+    def emit_variable(self, variable):
+        self.variable_signal.emit(variable)
+        self.close()
+
+    def show_menu(self, pos: QPoint):
+        # Display the menu at the specified screen position
+        self.adjustSize()
+        x = pos.x() - self.width()
+        y = pos.y() - self.height()
+        
+        self.move(x, y)
+        self.show()
