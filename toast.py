@@ -162,7 +162,9 @@ class Toast(QDialog):
         self.__duration_bar_timer.timeout.connect(self.__update_duration_bar)
 
         # Apply stylesheet
-        self.setStyleSheet(open(OSUtils.get_current_directory() + '/css/toast.css').read())
+        with open(OSUtils.get_current_directory() + '/css/toast.css', 'r', encoding='cp1252') as file:
+            self.setStyleSheet(file.read())
+        # self.setStyleSheet(open(OSUtils.get_current_directory() + '/css/toast.css').read())
 
         # Install event filter on widget if position relative to widget and moving with widget
         if Toast.__position_relative_to_widget and Toast.__move_position_with_widget:
