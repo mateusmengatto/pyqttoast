@@ -2316,17 +2316,20 @@ class CloseMiniMenu(QWidget):
         self.setWindowModality(Qt.NonModal)
 
         # Create buttons for each action
-        self.close_button = QPushButton("Novo")
-        self.remind_me_button = QPushButton("Aberto")
+        self.open_button = QPushButton("Visualizar")
+        self.close_button = QPushButton("Manter como não visto")
+        self.remind_me_button = QPushButton("Visto")
         self.keep_on_button = QPushButton("Concluído")
         #'novo', 'aberto', 'espera', 'concluido'
         # Connect each button to its respective signal
+        self.open_button.clicked.connect(lambda: self.emit_variable("abrir"))
         self.close_button.clicked.connect(lambda: self.emit_variable("novo"))
         self.remind_me_button.clicked.connect(lambda: self.emit_variable("aberto"))
         self.keep_on_button.clicked.connect(lambda: self.emit_variable("concluido"))
 
         # Layout to arrange buttons vertically
         layout = QVBoxLayout()
+        layout.addWidget(self.open_button)
         layout.addWidget(self.close_button)
         layout.addWidget(self.remind_me_button)
         layout.addWidget(self.keep_on_button)
